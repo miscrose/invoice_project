@@ -112,11 +112,11 @@
                 `;
                 $('#itemsTable tbody').append(newRow);
                 
-                // Clear the form fields
+                
                 $('#description').val('');
                 $('#quantity').val('');
                 $('#unit_price').val('');
-                $('#tva').val('');
+            
             }
         });
 

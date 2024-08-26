@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->date('date');
        
-       
+            $table->string('is_confirmed')->default('false');
             $table->string('devis_number');
             $table->foreignId('companyinfo_id')->constrained('companyinfos');
             $table->foreignId('client_id')->constrained('clients')->onDelete('cascade');

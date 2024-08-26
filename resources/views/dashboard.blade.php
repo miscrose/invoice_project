@@ -14,6 +14,9 @@
     {!! $ttc_chart->container() !!}
 </div>
 
+<div class="p-6 m-10 bg-white rounded shadow">
+    {!! $paymentamount_chart->container() !!}
+</div>
 
 </div>
 
@@ -22,5 +25,5 @@
 <script src="https://cdn.jsdelivr.net/npm/apexcharts@latest"></script>
 {!! $invoice_count->script() !!}
 {!! $ttc_chart->script() !!}
-              
+{!! $paymentamount_chart->script() !!}    
     @endsection

@@ -11,15 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('devis', function (Blueprint $table) {
+        Schema::create('payment_invoice_receiveds', function (Blueprint $table) {
             $table->id();
-            $table->date('date');
-      
-            $table->string('is_confirmed')->default('false');
-            $table->foreignId('companyinfo_id');
-            $table->foreignId('client_id')->constrained('clients')->onDelete('cascade');
-     
             $table->timestamps();
+            $table->foreignId('received_invoice_id')->constrained('received_invoices');
+            $table->float('paye');
+            $table->date('payment_date');
         });
     }
 
@@ -28,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('devis');
+        Schema::dropIfExists('payment_invoice_receiveds');
     }
 };

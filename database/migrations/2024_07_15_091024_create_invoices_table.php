@@ -14,11 +14,11 @@ return new class extends Migration
         Schema::create('invoices', function (Blueprint $table) {
             $table->id();
             $table->date('date');
-            $table->date('due_date');
-            $table->date('payment_date')->nullable();
+            $table->float('ttc')->nullable();
+            $table->float('paymentamount')->default(0);
             $table->foreignId('companyinfo_id');
             $table->foreignId('client_id')->constrained('clients')->onDelete('cascade');
-            $table->string('status');
+            $table->string('status')->default('unpaid');
             $table->timestamps();
         });
     }

@@ -9,6 +9,7 @@ use App\Models\companyinfo;
 use App\Models\devis;
 use App\Models\devis_recu;
 use App\Models\invoice;
+use App\Models\product;
 use App\Models\received_invoice;
 use App\Models\User;
 use Illuminate\Http\Client\Request as ClientRequest;
@@ -235,10 +236,10 @@ class admin_contr extends Controller
                                        ->get();
                 }
                 else{
-                    $invoice = invoice::select('id', 'date','created_at','payment_date', 'due_date','status',DB::raw("null as invoice_number"), DB::raw("'received' as type"))
+                    $invoice = invoice::select('id', 'date','created_at','paymentamount','ttc' ,'status',DB::raw("null as invoice_number"), DB::raw("'received' as type"))
                     ->where('client_id', $id);
                 
-                    $received_invoice = received_invoice::select('id', 'date','created_at','payment_date', 'due_date','status','invoice_number', DB::raw("'sent' as type"))
+                    $received_invoice = received_invoice::select('id', 'date','created_at','paymentamount','ttc' , 'status','invoice_number', DB::raw("'sent' as type"))
                     ->where('client_id', $id);
                   
 
@@ -313,10 +314,10 @@ function list_client_devis(Request $request,$id){
                                        ->get();
                 }
                 else{
-                    $devis = devis::select('id', 'date','created_at',DB::raw("null as devis_number"), DB::raw("'received' as type"))
+                    $devis = devis::select('id', 'date','created_at','is_confirmed',DB::raw("null as devis_number"), DB::raw("'received' as type"))
                     ->where('client_id', $id);
                 
-                    $received_devis = devis_recu::select('id', 'date','created_at', 'devis_number', DB::raw("'sent' as type"))
+                    $received_devis = devis_recu::select('id', 'date','created_at','is_confirmed', 'devis_number', DB::raw("'sent' as type"))
                     ->where('client_id', $id);
                   
 
@@ -379,39 +380,11 @@ function list_client_devis(Request $request,$id){
     {
        $invoice_count=$this->invoice_count();
        $ttc_chart=$this->ttc_chart();
-       return view('dashboard', compact('invoice_count','ttc_chart'));
+       $paymentamount_chart=$this->paymentamount_chart();
+       return view('dashboard', compact('invoice_count','ttc_chart','paymentamount_chart'));
     
 }
-/*
-public function invoice_count()
-{
-    $invoices = $this->trimestre_data_currentYear('invoices');
-    $labels = [];
-    $values = [];
 
-    $invoiceCount = $invoices->groupBy(['quarter']);
-
-foreach (['Q1', 'Q2', 'Q3', 'Q4'] as $quarter) {
-    $count = isset($invoiceCount[$quarter]) ? $invoiceCount[$quarter]->count() : 0;
-    $labels[] = $quarter;  
-    $values[] = $count;   
-}
-
-
-$chart = (new LarapexChart)->barChart()
-    ->setTitle('Nombre de Factures Envoyées par Trimestre ')
-    ->setSubtitle('Répartition trimestrielle des factures')
-    ->setXAxis($labels)
-    ->setDataset([
-        [
-            'name' => 'Nombre de Factures',
-            'data' => $values
-        ]
-    ]);
-
-return $chart;
-}
-*/
 
 public function invoice_count()
 {
@@ -456,80 +429,26 @@ public function invoice_count()
     return $chart;
 }
 
-
-/*
 public function ttc_chart()
 {
-    $items = $this->trimestre_data_currentYear('invoice_items');
-    $labels = [];
-    $values = [];
-
-   
-    $itemsGrouped = $items->groupBy('quarter');
-
-  
-    foreach (['Q1', 'Q2', 'Q3', 'Q4'] as $quarter) {
-        $itemsInQuarter = isset($itemsGrouped[$quarter]) ? $itemsGrouped[$quarter] : collect();
-
-        $ttc = 0;
-
-
-        foreach ($itemsInQuarter as $item) {
-            $totalPrice = $item->quantity * $item->unit_price;
-            $totalTva = $totalPrice * ($item->tva / 100);
-            $ttc += $totalPrice + $totalTva;  
-        }
-    
-        $labels[] = $quarter;  
-        $values[] = $ttc;      
-    }
-
-    
-    $chart = (new LarapexChart)->barChart()
-        ->setTitle('Total TTC par Trimestre pour Factures Rédigées')
-        ->setSubtitle('Répartition trimestrielle du TTC')
-        ->setXAxis($labels)
-        ->setDataset([
-            [
-                'name' => 'Total TTC',
-                'data' => $values
-            ]
-        ]);
-
-    return $chart;
-}
-
-*/
-public function ttc_chart()
-{
-    // Fetch data separately for each table
-    $draftItems = $this->trimestre_data_currentYear('invoice_items');
-    $receivedItems = $this->trimestre_data_currentYear('received_invoice_items');
+    // Récupérer les données de chaque table avec la fonction existante
+    $draftItems = $this->trimestre_data_currentYear('invoices');
+    $receivedItems = $this->trimestre_data_currentYear('received_invoices');
 
     $labels = [];
     $draftValues = [];
     $receivedValues = [];
 
-    // Group data by quarter
+    // Grouper les données par trimestre
     $draftGrouped = $draftItems->groupBy('quarter');
     $receivedGrouped = $receivedItems->groupBy('quarter');
 
     foreach (['Q1', 'Q2', 'Q3', 'Q4'] as $quarter) {
-        // Calculate TTC for draft items
-        $draftItemsInQuarter = isset($draftGrouped[$quarter]) ? $draftGrouped[$quarter] : collect();
-        $draftTtc = $draftItemsInQuarter->reduce(function ($carry, $item) {
-            $totalPrice = $item->quantity * $item->unit_price;
-            $totalTva = $totalPrice * ($item->tva / 100);
-            return $carry + ($totalPrice + $totalTva);
-        }, 0);
+        // Somme des TTC pour les factures rédigées
+        $draftTtc = $draftGrouped->get($quarter, collect())->sum('ttc');
 
-        // Calculate TTC for received items
-        $receivedItemsInQuarter = isset($receivedGrouped[$quarter]) ? $receivedGrouped[$quarter] : collect();
-        $receivedTtc = $receivedItemsInQuarter->reduce(function ($carry, $item) {
-            $totalPrice = $item->quantity * $item->unit_price;
-            $totalTva = $totalPrice * ($item->tva / 100);
-            return $carry + ($totalPrice + $totalTva);
-        }, 0);
+        // Somme des TTC pour les factures reçues
+        $receivedTtc = $receivedGrouped->get($quarter, collect())->sum('ttc');
 
         $labels[] = $quarter;
         $draftValues[] = $draftTtc;
@@ -556,17 +475,64 @@ public function ttc_chart()
     return $chart;
 }
 
+public function paymentamount_chart()
+{
+    // Récupérer les données de chaque table avec la fonction existante
+    $draftItems = $this->trimestre_data_currentYear('invoices');
+    $receivedItems = $this->trimestre_data_currentYear('received_invoices');
+
+    $labels = [];
+    $draftValues = [];
+    $receivedValues = [];
+
+    // Grouper les données par trimestre
+    $draftGrouped = $draftItems->groupBy('quarter');
+    $receivedGrouped = $receivedItems->groupBy('quarter');
+
+    foreach (['Q1', 'Q2', 'Q3', 'Q4'] as $quarter) {
+        // Somme des TTC pour les factures rédigées
+        $draftTtc = $draftGrouped->get($quarter, collect())->sum('paymentamount');
+
+        // Somme des TTC pour les factures reçues
+        $receivedTtc = $receivedGrouped->get($quarter, collect())->sum('paymentamount');
+
+        $labels[] = $quarter;
+        $draftValues[] = $draftTtc;
+        $receivedValues[] = $receivedTtc;
+    }
+
+    $chart = (new LarapexChart)->barChart()
+    ->setTitle('Total des paiements par Trimestre')
+
+    ->setSubtitle('Répartition trimestrielle des paiements réellement reçus et payés')
+        ->setXAxis($labels)
+        ->setDataset([
+            [
+                'name' => 'Paiements reçus pour Factures Rédigées',
+                'data' => $draftValues,
+                'color' => '#1f77b4' // Couleur pour les factures rédigées
+            ],
+            [
+                'name' => 'Paiements effectués pour Factures Reçues',
+                'data' => $receivedValues,
+                'color' => '#ff7f0e' // Couleur pour les factures reçues
+            ]
+        ]);
+
+    return $chart;
+}
+
 public function trimestre_data_currentYear($table)
 {
     $currentYear = date('Y');
     $query = DB::table($table)
         ->select(DB::raw(
-            "strftime('%Y', created_at) as year,
+            "strftime('%Y', date) as year,
             CASE
-                WHEN strftime('%m', created_at) IN ('01', '02', '03') THEN 'Q1'
-                WHEN strftime('%m', created_at) IN ('04', '05', '06') THEN 'Q2'
-                WHEN strftime('%m', created_at) IN ('07', '08', '09') THEN 'Q3'
-                WHEN strftime('%m', created_at) IN ('10', '11', '12') THEN 'Q4'
+                WHEN strftime('%m', date) IN ('01', '02', '03') THEN 'Q1'
+                WHEN strftime('%m', date) IN ('04', '05', '06') THEN 'Q2'
+                WHEN strftime('%m', date) IN ('07', '08', '09') THEN 'Q3'
+                WHEN strftime('%m', date) IN ('10', '11', '12') THEN 'Q4'
             END as quarter,
             *
             "
@@ -575,12 +541,59 @@ public function trimestre_data_currentYear($table)
         ->orderBy('quarter');
         
  
-        $query->whereYear('created_at', $currentYear );
+        $query->whereYear('date', $currentYear );
    
     
     return $query->get();
 }
 
+
+
+
+function product_form(){
+    if (Auth::check() && Auth::user()->usertype === 'admin') {
+        $products=product::all();
+        return view('product_form',compact('products'));   
+    }
+
+  
+    return to_route('home')->with('error', 'Accès non autorisé');
+
+}
+
+
+function product_info_save(Request $request){
+
+    product::create([
+      'description'=>$request->description,
+      'price'=>$request->price
+    ]);
+    return redirect()->back()->with('success', ' information saved successfully.');
+
+}
+
+
+public function product_update(Request $request, $id)
+    {
+        $product = Product::find($id);
+        if ($product) {
+            $product->description = $request->input('description');
+            $product->price = $request->input('price');
+            $product->save();
+            return response()->json(['success' => 'Product updated successfully.']);
+        }
+        return response()->json(['error' => 'Product not found.'], 404);
+    }
+
+    public function product_delete($id)
+    {
+        $product = Product::find($id);
+        if ($product) {
+            $product->delete();
+            return response()->json(['success' => 'Product deleted successfully.']);
+        }
+        return response()->json(['error' => 'Product not found.'], 404);
+    }
 
 }
 

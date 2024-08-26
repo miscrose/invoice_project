@@ -36,7 +36,10 @@ class home_contr extends Controller
             ->merge($idclientdevis)
             ->merge($idclientdevisrecus)
             ->unique();
-            $clients = Client::whereIn('id', $allClientIds)->get();
+            $clients = Client::whereIn('id', $allClientIds)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
 
             return view('home', compact( 'clients', 'user'));
         }
@@ -72,10 +75,10 @@ class home_contr extends Controller
                                        ->get(); 
                 }
                 else{
-                    $invoice = invoice::select('id', 'date','created_at','payment_date', 'due_date','status',DB::raw("null as invoice_number"), DB::raw("'received' as type"))
+                    $invoice = invoice::select('id', 'date','created_at','paymentamount','ttc','status',DB::raw("null as invoice_number"), DB::raw("'received' as type"))
                     ->where('client_id', $client->id);
                 
-                    $received_invoice = received_invoice::select('id', 'date','created_at','payment_date', 'due_date','status','invoice_number', DB::raw("'sent' as type"))
+                    $received_invoice = received_invoice::select('id', 'date','created_at','paymentamount','ttc' ,'status','invoice_number', DB::raw("'sent' as type"))
                     ->where('client_id', $client->id);
                   
 
@@ -124,10 +127,10 @@ class home_contr extends Controller
                                        ->get();
                 }
                 else{
-                    $l_devis = devis::select('id', 'date','created_at',DB::raw("null as devis_number"), DB::raw("'received' as type"))
+                    $l_devis = devis::select('id', 'date','created_at','is_confirmed',DB::raw("null as devis_number"), DB::raw("'received' as type"))
                     ->where('client_id', $client->id);
                 
-                    $received_devis = devis_recu::select('id', 'date','created_at','devis_number', DB::raw("'sent' as type"))
+                    $received_devis = devis_recu::select('id', 'date','created_at','is_confirmed','devis_number', DB::raw("'sent' as type"))
                     ->where('client_id', $client->id);
                   
 
@@ -152,7 +155,8 @@ class home_contr extends Controller
     {
       $invoice_count=$this->invoice_count();
        $ttc_chart=$this->ttc_chart();
-       return view('dashboard', compact('invoice_count','ttc_chart'));
+       $paymentamount_chart=$this->paymentamount_chart();
+       return view('dashboard', compact('invoice_count','ttc_chart','paymentamount_chart'));
     
 }
 
@@ -202,8 +206,8 @@ public function invoice_count()
 
 public function ttc_chart()
 {
-    $receivedItems = $this->trimestre_data_currentYear_item('received_invoices', 'received_invoice_items');
-    $draftItems = $this->trimestre_data_currentYear_item('invoices', 'invoice_items');
+    $draftItems = $this->trimestre_data_currentYear('invoices');
+    $receivedItems = $this->trimestre_data_currentYear('received_invoices');
 
     $labels = [];
     $draftValues = [];
@@ -213,25 +217,15 @@ public function ttc_chart()
     $receivedGrouped = $receivedItems->groupBy('quarter');
 
     foreach (['Q1', 'Q2', 'Q3', 'Q4'] as $quarter) {
-        // Calculate TTC for draft items
-        $draftItemsInQuarter = isset($draftGrouped[$quarter]) ? $draftGrouped[$quarter] : collect();
-        $draftTtc = $draftItemsInQuarter->reduce(function ($carry, $item) {
-            $totalPrice = $item->quantity * $item->unit_price;
-            $totalTva = $totalPrice * ($item->tva / 100);
-            return $carry + ($totalPrice + $totalTva);
-        }, 0);
+         // Somme des TTC pour les factures rédigées
+         $draftTtc = $draftGrouped->get($quarter, collect())->sum('ttc');
 
-        // Calculate TTC for received items
-        $receivedItemsInQuarter = isset($receivedGrouped[$quarter]) ? $receivedGrouped[$quarter] : collect();
-        $receivedTtc = $receivedItemsInQuarter->reduce(function ($carry, $item) {
-            $totalPrice = $item->quantity * $item->unit_price;
-            $totalTva = $totalPrice * ($item->tva / 100);
-            return $carry + ($totalPrice + $totalTva);
-        }, 0);
-
-        $labels[] = $quarter;
-        $draftValues[] = $draftTtc;
-        $receivedValues[] = $receivedTtc;
+         // Somme des TTC pour les factures reçues
+         $receivedTtc = $receivedGrouped->get($quarter, collect())->sum('ttc');
+ 
+         $labels[] = $quarter;
+         $draftValues[] = $draftTtc;
+         $receivedValues[] = $receivedTtc;
     }
 
     $chart = (new LarapexChart)->barChart()
@@ -255,35 +249,79 @@ public function ttc_chart()
 }
 
 
+public function paymentamount_chart()
+{
+    $draftItems = $this->trimestre_data_currentYear('invoices');
+    $receivedItems = $this->trimestre_data_currentYear('received_invoices');
+
+    $labels = [];
+    $draftValues = [];
+    $receivedValues = [];
+    // Group data by quarter
+    $draftGrouped = $draftItems->groupBy('quarter');
+    $receivedGrouped = $receivedItems->groupBy('quarter');
+
+    foreach (['Q1', 'Q2', 'Q3', 'Q4'] as $quarter) {
+         // Somme des TTC pour les factures rédigées
+         $draftTtc = $draftGrouped->get($quarter, collect())->sum('paymentamount');
+
+         // Somme des TTC pour les factures reçues
+         $receivedTtc = $receivedGrouped->get($quarter, collect())->sum('paymentamount');
+ 
+         $labels[] = $quarter;
+         $draftValues[] = $draftTtc;
+         $receivedValues[] = $receivedTtc;
+    }
+
+    $chart = (new LarapexChart)->barChart()
+        ->setTitle('Total des paiements par Trimestre')
+        ->setSubtitle('Répartition trimestrielle des paiements réellement reçus et payés')
+        ->setXAxis($labels)
+        ->setDataset([
+            [
+                'name' => 'Paiements reçus pour Factures Rédigées',
+                'data' => $receivedValues,
+                'color' => '#1f77b4' // Couleur pour les factures rédigées
+            ],
+            [
+                'name' => 'Paiements effectués pour Factures Reçues',
+                'data' => $draftValues,
+                'color' => '#ff7f0e' // Couleur pour les factures reçues
+            ]
+        ]);
+
+    return $chart;
+}
+
 
 public function trimestre_data_currentYear($table)
 {  $userId = Auth::user()->id;
-    $client=client::where('user_id',$userId)->first();
+    $clientIds = Client::where('user_id', $userId)->pluck('id');
     
     $currentYear = date('Y');
     $query = DB::table($table)
         ->select(DB::raw(
-            "strftime('%Y', created_at) as year,
+            "strftime('%Y', date) as year,
             CASE
-                WHEN strftime('%m', created_at) IN ('01', '02', '03') THEN 'Q1'
-                WHEN strftime('%m', created_at) IN ('04', '05', '06') THEN 'Q2'
-                WHEN strftime('%m', created_at) IN ('07', '08', '09') THEN 'Q3'
-                WHEN strftime('%m', created_at) IN ('10', '11', '12') THEN 'Q4'
+                WHEN strftime('%m', date) IN ('01', '02', '03') THEN 'Q1'
+                WHEN strftime('%m', date) IN ('04', '05', '06') THEN 'Q2'
+                WHEN strftime('%m', date) IN ('07', '08', '09') THEN 'Q3'
+                WHEN strftime('%m', date) IN ('10', '11', '12') THEN 'Q4'
             END as quarter,
             *
             "
         ))
         ->orderBy('year')
         ->orderBy('quarter')
-        ->whereYear('created_at', $currentYear);
+        ->whereYear('date', $currentYear);
 
        
-        $query->where('client_id', $client->id); 
+        $query->wherein('client_id', $clientIds); 
 
     return $query->get();
 }
 
-
+/*
 public function trimestre_data_currentYear_item($table,$table_item)
 {  $userId = Auth::user()->id;
     $client=client::where('user_id',$userId)->first();
@@ -314,7 +352,7 @@ public function trimestre_data_currentYear_item($table,$table_item)
     return $query->get();
 }
 
-
+*/
 
 /*
     public function invoice_count()

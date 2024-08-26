@@ -8,6 +8,11 @@ use App\Models\devis;
 use App\Models\devis_items;
 use App\Models\devis_recu;
 use App\Models\devis_recu_item;
+use App\Models\invoice;
+use App\Models\invoice_item;
+use App\Models\product;
+use App\Models\received_invoice;
+use App\Models\received_invoice_item;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf as FacadePdf;
@@ -29,7 +34,8 @@ class devis_contr extends Controller
                        
         $client=client::wherenull('state')->get();
         $companyinfo=companyinfo::all();
-        return view('devis_form',compact('client','companyinfo'));
+        $products=product::all();
+        return view('devis_form',compact('client','companyinfo','products'));
     }
 
 
@@ -196,5 +202,184 @@ function detail_devis(Request $request,$type,$id)
 function quote_list(){
     return view('quote_home');
 }
+
+
+
+function validation_quote_admin(Request $request ){
+    $quote_id=$request->quote_id;
+    $type=$request->type;
+
+    if($type==='sent'){
+
+            $quote=devis_recu::findOrfail($quote_id);
+            $invoice = new received_invoice();
+            $invoice->date =$quote->date;
+            $invoice->invoice_number =$quote->devis_number;
+            $invoice->client_id = $quote->client_id;
+            $invoice->status = 'unpaid';
+            $invoice->companyinfo_id = $quote->companyinfo_id;
+
+            $invoice->save();
+
+            $quote_item=devis_recu_item::where('devis_recu_id',$quote_id)->get();
+
+            $total_net = 0;
+            $total_tva = 0;
+
+
+            foreach ($quote_item as $item){
+
+
+                $quantity = $item->quantity;
+                $unit_price = $item->unit_price;
+                $tva = $item->tva;
+
+                $item_total = $quantity * $unit_price;
+                $item_tva = ($tva * $item_total) / 100;
+
+                $total_net += $item_total;
+                $total_tva += $item_tva;
+
+                $invoice_item= new received_invoice_item();
+                $invoice_item->description=$item->description;
+                $invoice_item->quantity=$item->quantity;
+                $invoice_item->unit_price=$item->unit_price;
+                $invoice_item->tva=$item->tva;
+                $invoice_item->received_invoice_id=$invoice->id;
+                $invoice_item->save();
+                
+            }
+            $ttc = $total_net + $total_tva;
+
+            $invoice->ttc = $ttc;
+            $invoice->save();
+
+            $quote->is_confirmed='true';
+            $quote->save();
+}
+else{
+
+
+    $quote=devis::findOrfail($quote_id);
+    $invoice = new invoice();
+    $invoice->date =$quote->date;
+
+    $invoice->client_id = $quote->client_id;
+    $invoice->status = 'unpaid';
+    $invoice->companyinfo_id = $quote->companyinfo_id;
+
+    $invoice->save();
+
+    $quote_item=devis_items::where('devis_id',$quote_id)->get();
+
+    $total_net = 0;
+    $total_tva = 0;
+    foreach ($quote_item as $item){
+        $quantity = $item->quantity;
+        $unit_price = $item->unit_price;
+        $tva = $item->tva;
+
+        $item_total = $quantity * $unit_price;
+        $item_tva = ($tva * $item_total) / 100;
+
+        $total_net += $item_total;
+        $total_tva += $item_tva;
+
+
+
+        $invoice_item= new invoice_item();
+        $invoice_item->description=$item->description;
+        $invoice_item->quantity=$item->quantity;
+        $invoice_item->unit_price=$item->unit_price;
+        $invoice_item->tva=$item->tva;
+        $invoice_item->invoice_id=$invoice->id;
+        $invoice_item->save();
+        
+    }
+    $ttc = $total_net + $total_tva;
+
+    $invoice->ttc = $ttc;
+    $invoice->save();
+
+
+    $quote->is_confirmed='true';
+    $quote->save();
+
+}
+return redirect()->back();
+
+}
+
+
+
+function validation_quote(Request $request ){
+    $quote_id=$request->quote_id;
+    $user_id=Auth::user()->id;
+    $user_all_client_id=client::where('user_id',$user_id)->pluck('id')->toArray();
+    $verif=devis::findOrfail($quote_id)->wherein('client_id',$user_all_client_id);
+
+
+
+    if($verif){
+        $quote=devis::findOrfail($quote_id);
+        $invoice = new invoice();
+        $invoice->date =$quote->date;
+    
+        $invoice->client_id = $quote->client_id;
+        $invoice->status = 'unpaid';
+        $invoice->companyinfo_id = $quote->companyinfo_id;
+    
+        $invoice->save();
+    
+        $quote_item=devis_items::where('devis_id',$quote_id)->get();
+
+        $total_net = 0;
+        $total_tva = 0;
+
+        foreach ($quote_item as $item){
+            $quantity = $item->quantity;
+            $unit_price = $item->unit_price;
+            $tva = $item->tva;
+
+            $item_total = $quantity * $unit_price;
+            $item_tva = ($tva * $item_total) / 100;
+
+            $total_net += $item_total;
+            $total_tva += $item_tva;
+
+
+
+
+            $invoice_item= new invoice_item();
+            $invoice_item->description=$item->description;
+            $invoice_item->quantity=$item->quantity;
+            $invoice_item->unit_price=$item->unit_price;
+            $invoice_item->tva=$item->tva;
+            $invoice_item->invoice_id=$invoice->id;
+            $invoice_item->save();
+            
+        }
+        $ttc = $total_net + $total_tva;
+
+        $invoice->ttc = $ttc;
+        $invoice->save();
+
+
+        $quote->is_confirmed='true';
+        $quote->save();
+
+
+
+    }
+
+        return redirect()->back();
+  
+
+
+
+
+}
+
+
 
 }

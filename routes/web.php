@@ -3,7 +3,6 @@
 use App\Http\Controllers\admin_contr;
 use App\Http\Controllers\devis_contr;
 use App\Http\Controllers\home_contr;
-use App\Http\Controllers\invoice;
 use App\Http\Controllers\invoice_contr;
 use App\Http\Controllers\login_contr;
 use App\Http\Controllers\profile_contr;
@@ -96,5 +95,18 @@ Route::post('/link_user_client/{id}', [admin_contr::class, 'link_user_client'])-
 Route::get('/dashboard_admin',[admin_contr::class,'dashboard_admin'])->middleware('admin')->name('dashboard_admin');
 Route::get('/dashboard_client',[home_contr::class,'dashboard_client'])->name('dashboard_client');
 
-Route::post('/paye_change_admin', [invoice_contr::class, 'paye_change_admin'])->name('paye_change_admin');
-Route::post('/paye_change_client', [invoice_contr::class, 'paye_change_client'])->name('paye_change_client');
+Route::match(['get', 'post'],'/payment_form', [invoice_contr::class, 'payment_form'])->name('payment_form');
+Route::post('/payment_form_save', [invoice_contr::class, 'payment_form_save'])->name('payment_form_save');
+
+
+
+Route::post('/validation_quote_admin', [devis_contr::class, 'validation_quote_admin'])->name('validation_quote_admin');
+Route::post('/validation_quote', [devis_contr::class, 'validation_quote'])->name('validation_quote');
+
+
+Route::match(['get', 'post'],'/product_form', [admin_contr::class, 'product_form'])->middleware('admin')->name('product_form');
+Route::post('/product_info_save', [admin_contr::class, 'product_info_save'])->name('product_info_save');
+Route::post('/product_update/{id}', [admin_contr::class, 'product_update'])->name('product_update');
+Route::post('/product_delete/{id}', [admin_contr::class, 'product_delete'])->name('product_delete');
+
+Route::post('/payment_detail', [invoice_contr::class, 'payment_detail'])->name('payment_detail');

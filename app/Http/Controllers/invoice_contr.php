@@ -6,6 +6,9 @@ use App\Models\client;
 use App\Models\companyinfo;
 use App\Models\invoice;
 use App\Models\invoice_item;
+use App\Models\payment_invoice_received;
+use App\Models\payment_invoice_sent;
+use App\Models\product;
 use App\Models\received_invoice;
 use App\Models\received_invoice_item;
 use Illuminate\Http\Request;
@@ -32,9 +35,9 @@ class invoice_contr extends Controller
 */
 
         $client=client::wherenull('state')->get();
-
+        $products=product::all();
         $companyinfo=companyinfo::all();
-        return view('invoice_form',compact('client','companyinfo'));
+        return view('invoice_form',compact('client','companyinfo','products'));
     }
 
 
@@ -43,9 +46,9 @@ class invoice_contr extends Controller
     function save_invoice_admin(Request $request){
         $request->validate([
             'date' => 'required|date',
-            'due_date' => 'required|date',
+       
             'client_id' => 'required|exists:clients,id',
-            'status' => 'required|string',
+        
             'company_id' => 'required|exists:companyinfos,id',
         ]);
         $quantities = $request->input('quantities');
@@ -57,14 +60,26 @@ class invoice_contr extends Controller
 
             $invoice = new invoice();
             $invoice->date = $request->date;
-            $invoice->due_date = $request->due_date;
+      
             $invoice->client_id = $request->client_id;
-            $invoice->status = $request->status;
+
             $invoice->companyinfo_id = $request->company_id;
-            $invoice->payment_date = $request->payment_date;
+       
             $invoice->save();
 
+            $total_net = 0;
+            $total_tva = 0;
             foreach ($descriptions as $key => $description) {
+                $quantity = $quantities[$key];
+                $unit_price = $unit_prices[$key];
+                $tva = $tvas[$key];
+
+                $item_total = $quantity * $unit_price;
+                $item_tva = ($tva * $item_total) / 100;
+
+                $total_net += $item_total;
+                $total_tva += $item_tva;
+ 
                 $item = new invoice_item();
                 $item->description = $description;
                 $item->quantity = $quantities[$key];
@@ -74,6 +89,12 @@ class invoice_contr extends Controller
                 $item->invoice_id = $invoice->id;
                 $item->save();
             }
+            $ttc = $total_net + $total_tva;
+
+            $invoice->ttc = $ttc;
+            $invoice->save();
+
+
             return redirect()->back()->with('success', 'Invoice created successfully');
 
 
@@ -83,7 +104,7 @@ class invoice_contr extends Controller
 
 
     function invoice_form_client(){
-      
+       
         $companyinfo=companyinfo::all();
         return view('invoice_form_client',compact('companyinfo'));
     }
@@ -94,9 +115,9 @@ class invoice_contr extends Controller
       
         $request->validate([
             'date' => 'required|date',
-            'due_date' => 'required|date',
+  
             'invoice_number'=>'required',
-            'status' => 'required|string',
+           
             'company_id' => 'required|exists:companyinfos,id',
         ]);
         $descriptions = $request->input('descriptions');
@@ -114,17 +135,28 @@ class invoice_contr extends Controller
                         $invoice = new received_invoice();
                         $invoice->date = $request->date;
 
-                        $invoice->due_date = $request->due_date;
+         
                         $invoice->companyinfo_id = $request->company_id;
                         $invoice->client_id = $client->id; 
-                        $invoice->status = $request->status;
+                    
                         $invoice->invoice_number = $request->invoice_number;
                     
                         $invoice->save();
 
-                        
+                        $total_net = 0;
+                        $total_tva = 0;
 
                         foreach ($descriptions as $key => $description) {
+                            $quantity = $quantities[$key];
+                            $unit_price = $unit_prices[$key];
+                            $tva = $tvas[$key];
+
+                            $item_total = $quantity * $unit_price;
+                            $item_tva = ($tva * $item_total) / 100;
+
+                            $total_net += $item_total;
+                            $total_tva += $item_tva;
+                          
                             $item = new received_invoice_item();
                             $item->description = $description;
                             $item->quantity = $quantities[$key];
@@ -134,6 +166,10 @@ class invoice_contr extends Controller
                             $item->received_invoice_id = $invoice->id;
                             $item->save();
                         }   
+                        $ttc = $total_net + $total_tva;
+
+                        $invoice->ttc = $ttc;
+                        $invoice->save();
 
                         return redirect()->back()->with('success', 'Invoice created successfully.');}
 
@@ -197,36 +233,120 @@ function detail_invoice(Request $request,$type,$id)
     return $pdf->stream('invoice_' . $invoice->id . '.pdf');
 }
 
+function payment_form(Request $request){
+    $type=$request->type;
+    $id=$request->id;
+    if($type==='sent'){
+        $invoice = received_invoice::find($id);
+        $payment_detail = payment_invoice_received::where('received_invoice_id', $id)
+        ->orderBy('created_at', 'desc') 
+        ->get();
+    $rest=$invoice->ttc-$invoice->paymentamount;
 
 
-function paye_change_admin(Request $request){
-    $invoice = Invoice::find($request->id);
-    if ($invoice) { $invoice->payment_date = $request->date;
-        $invoice->status = 'paid'; 
-        $invoice->save();
-        return response()->json([
-            
-            'paymentDate' => $invoice->payment_date 
-        ]);
-    } else {
-      
-        return response()->json(['error' => 'Invoice not found'], 404);
     }
+    else{   $invoice = Invoice::find($id);
+            $payment_detail=payment_invoice_sent::where('invoice_id',$id)
+            ->orderBy('created_at', 'desc') 
+            ->get();
+            $rest=$invoice->ttc-$invoice->paymentamount;     
+
+    }
+
+    return view('payment_form',compact('invoice','payment_detail','type','id','rest'));
 }
 
 
-function paye_change_client(Request $request){
-    $invoice = received_invoice::find($request->id);
-    if ($invoice) { $invoice->payment_date = $request->date;
-        $invoice->status = 'paid'; 
-        $invoice->save();
-        return response()->json([
-            
-            'paymentDate' => $invoice->payment_date 
-        ]);
-    } else {
-      
-        return response()->json(['error' => 'Invoice not found'], 404);
+function payment_form_save(Request $request){
+
+    if($request->type==='sent'){
+        $invoice = received_invoice::find($request->id);
+    
+        if ($invoice) { 
+            payment_invoice_received::create([
+             'received_invoice_id'=>$request->id,
+             'paye'=>$request->payment,
+             'payment_date'=>$request->date,]);
+
+             $paye=payment_invoice_received::where('received_invoice_id',$request->id)->sum('paye');
+             $invoice->paymentamount=$paye;
+             if($invoice->ttc===$invoice->paymentamount) $invoice->status='paid';
+             if($invoice->ttc > $invoice->paymentamount) $invoice->status='partially paid';
+
+
+             $invoice->save();
+
+          
+   
+             
+         
+         
+         } else {
+         
+            return back()->with('error', 'error');
+
+
+         }
+
     }
+    else{
+                     $invoice = Invoice::find($request->id);
+                        
+                    if ($invoice) { 
+                       payment_invoice_sent::create([
+                        'invoice_id'=>$request->id,
+                        'paye'=>$request->payment,
+                        'payment_date'=>$request->date,]);
+
+                        $paye=payment_invoice_sent::where('invoice_id',$request->id)->sum('paye');
+                        $invoice->paymentamount=$paye;
+                        if($invoice->ttc===$invoice->paymentamount) $invoice->status='paid';
+                        if($invoice->ttc > $invoice->paymentamount) $invoice->status='partially paid';
+
+
+                        $invoice->save();
+
+                     
+              
+                        
+                    
+                    
+                    } else {
+                    
+                        return back()->with('error', 'error');
+
+
+                    }
+
+    }
+    return to_route('payment_form', ['id' => $request->id, 'type' => $request->type])
+    ->with('success', 'Payment information saved successfully!');
 }
+
+
+
+function payment_detail(Request $request){
+    $type=$request->type;
+    $id=$request->id;
+    if($type==='sent'){
+        $invoice = received_invoice::find($id);
+        $payment_detail = payment_invoice_received::where('received_invoice_id', $id)
+        ->orderBy('created_at', 'desc') 
+        ->get();
+    $rest=$invoice->ttc-$invoice->paymentamount;
+
+
+    }
+    else{   $invoice = Invoice::find($id);
+            $payment_detail=payment_invoice_sent::where('invoice_id',$id)
+            ->orderBy('created_at', 'desc') 
+            ->get();
+            $rest=$invoice->ttc-$invoice->paymentamount;     
+
+    }
+
+    return view('payment_detail',compact('invoice','payment_detail','type','id','rest'));
+}
+
+
 }

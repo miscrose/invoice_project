@@ -38,7 +38,7 @@
                            
                             <div class="col-lg-5 d-none d-lg-block bg-register-image">
 
-                                <img src="{{ asset('/webcinq_logo.jpg') }}" height="100%" alt="webcinq" loading="lazy" />
+                                <img src="{{ asset('/webcinq_logo.png') }}" height="100%" alt="webcinq" loading="lazy" />
         
                             </div>
                            
@@ -51,9 +51,7 @@
                                           </div>
                                   
                                           
-                                      @else
-                                           <h1 class="h4 text-gray-900 mb-4">
-                                            Welcome Back!</h1>
+                                  
                                       @endif
                                     
                                        

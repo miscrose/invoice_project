@@ -23,10 +23,7 @@
                             <label for="date" class="form-label">Date</label>
                             <input type="date" class="form-control" id="date" name="date" required>
                         </div>
-                        <div class="mb-3">
-                            <label for="due_date" class="form-label">Due Date</label>
-                            <input type="date" class="form-control" id="due_date" name="due_date" required>
-                        </div>
+                       
                         <div class="mb-3">
                             <label for="company_id" class="form-label">Company</label>
                             <select class="form-control" id="company_id" name="company_id" required>
@@ -36,13 +33,7 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="mb-3">
-                            <label for="status" class="form-label">Status</label>
-                            <select class="form-control" id="status" name="status">
-                                <option value="unpaid">Unpaid</option>
-                                <option value="paid">Paid</option>
-                            </select>
-                        </div>
+                    
                         <div class="card mt-3">
                             <div class="card-header">Add Invoice Item</div>
                             <div class="card-body">
@@ -99,6 +90,8 @@
 
 <script>
     $(document).ready(function() {
+
+        
         
         $('#company_id').select2({
             placeholder: "company",
@@ -127,7 +120,7 @@
                 $('#description').val('');
                 $('#quantity').val('');
                 $('#unit_price').val('');
-                $('#tva').val('');
+  
             }
         });
 

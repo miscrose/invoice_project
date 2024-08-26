@@ -19,37 +19,36 @@
                         @endif
                     </td>
                     <td class="text-nowrap">{{ $invoice->date }}</td>
-                   
-                    <td class="text-nowrap" data-id="{{ $invoice->type}}-{{$invoice->id }}">
-                        
-                         @if ($invoice->status === 'paid')
-                              paid ({{$invoice->payment_date}})
+ 
+                        @if (Auth::user()->usertype==='admin')
+                        <td class="text-nowrap">
+                            <form action="{{route('payment_form')}}" method="POST">
+                                @csrf
+                                <input type="hidden" name="id" value="{{ $invoice->id }}">
+                                <input type="hidden" name="type" value="{{ $invoice->type }}">
+                               <span> {{$invoice->status}} ({{$invoice->paymentamount}}DH/{{$invoice->ttc}}DH)</span>
+                               <button type="submit" class="btn btn-link p-0 m-0">
+                                <small>details</small>
+                            </button>
+                            </form>
+    
+    
+                        </td>
                         @else
-                            @if ((Auth::user()->usertype === 'admin' && $invoice->type === 'received') ||
-                            (Auth::user()->usertype !== 'admin' && $invoice->type === 'sent'))
-                                      
-                                {{ $invoice->status }}
-                                <button 
-                                    class="btn btn-success btn-sm ms-2 btn-mark-paid" 
-                                    data-id="{{ $invoice->id }}"
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#paymentModal"
-                                >
-                                    Mark as Paid 
-                                        </button>
-                                     @else
-                                    {{ $invoice->status }}
-                                    @endif
-                                    
-                                    
-                                    
-                       
-                       
-                       
-                       
-                    @endif  
+                        <td>
+                            <form action="{{route('payment_detail')}}" method="POST">
+                                @csrf
+                                <input type="hidden" name="id" value="{{ $invoice->id }}">
+                                <input type="hidden" name="type" value="{{ $invoice->type }}">
+                               <span> {{$invoice->status}} ({{$invoice->paymentamount}}DH/{{$invoice->ttc}}DH)</span>
+                               <button type="submit" class="btn btn-link p-0 m-0">
+                                <small>details</small>
+
                         </td>
 
+
+                  
+                        @endif
                     <td class="text-end">
                         <form action="{{ route('detail_invoice', ['type' => $invoice->type, 'id' => $invoice->id]) }}" method="POST" style="display: inline;">
                             @csrf
@@ -60,27 +59,4 @@
             @endforeach
         </tbody>
     </table>
-</div>
-
-
-<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="paymentModalLabel">Enter Payment Date</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="paymentForm" >
-                    @csrf
-                    
-                    <div class="mb-3">
-                        <label for="payment_date" class="form-label">Payment Date</label>
-                        <input type="date" class="form-control" id="payment_date" name="payment_date" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Save</button>
-                </form>
-            </div>
-        </div>
-    </div>
 </div>

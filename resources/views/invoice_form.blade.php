@@ -20,10 +20,7 @@
                             <label for="date" class="form-label">Date</label>
                             <input type="date" class="form-control" id="date" name="date" required>
                         </div>
-                        <div class="mb-3">
-                            <label for="due_date" class="form-label">Due Date</label>
-                            <input type="date" class="form-control" id="due_date" name="due_date" required>
-                        </div>
+                      
                         <div class="mb-3">
                             <label for="client_id" class="form-label">Client</label>
                             <select class="form-control" id="client_id" name="client_id" required>
@@ -45,28 +42,37 @@
                             </select>
                         </div>
                         
-                        <div class="mb-3">
-                            <label for="status" class="form-label">Status</label>
-                            <select class="form-control" id="status" name="status">
-                                <option value="unpaid">Unpaid</option>
-                                <option value="paid">Paid</option>
-                            </select>
-                        </div>
-                        <div class="mb-3" id="payment_date_div" style="display: none;">
-                            <label for="payment_date" class="form-label">Payment Date</label>
-                            <input type="date" class="form-control" id="payment_date" name="payment_date">
-                        </div>
-                        
+                     
                         <div class="card mt-3">
-                            <div class="card-header">Add Invoice Item</div>
+                            <div class="row align-items-center card-header ">
+                
+                                <div class="col-md-6">
+                                  Add Invoice Item
+                                </div>
+                        
+                                <div class="col-md-6">
+                               
+                                    <select class="form-select" id="product_select">
+                                        <option value="">Select a product</option>
+                                        @foreach($products as $product)
+                                            <option value="{{ $product->id }}" data-description="{{ $product->description }}" data-price="{{ $product->price }}">
+                                                {{ $product->description }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+
+
+
                             <div class="card-body">
                                 <div class="mb-3">
                                     <label for="description" class="form-label">Description</label>
-                                    <input type="text" class="form-control" id="description" name="description">
+                                            <input type="text" class="form-control" id="description" name="description">
                                 </div>
                                 <div class="mb-3">
                                     <label for="quantity" class="form-label">Quantity</label>
-                                    <input type="number" class="form-control" id="quantity" name="quantity">
+                                    <input type="number" class="form-control" id="quantity" name="quantity" value="1">
                                 </div>
                                 <div class="mb-3">
                                     <label for="unit_price" class="form-label">Unit Price</label>
@@ -138,6 +144,20 @@
 
 <script>
     $(document).ready(function() {
+
+        $('#product_select').on('change', function() {
+        var selectedProduct = $(this).find('option:selected');
+        var description = selectedProduct.data('description');
+        var price = selectedProduct.data('price');
+
+        // Remplir les champs de saisie avec les valeurs sélectionnées
+        $('#description').val(description);
+        $('#unit_price').val(price);
+    });
+
+
+
+
         $('#client_id').select2({
             placeholder: "Select a client",
             allowClear: true
@@ -168,9 +188,10 @@
                 
                 // Clear the form fields
                 $('#description').val('');
-                $('#quantity').val('');
+
                 $('#unit_price').val('');
-                $('#tva').val('');
+              
+                $('#product_select').val('').change();
             }
         });
 
@@ -215,15 +236,7 @@
  });
     });
     
-    $(document).ready(function() {
-    $('#status').on('change', function() {
-        if ($(this).val() === 'paid') {
-            $('#payment_date_div').show();
-        } else {
-            $('#payment_date_div').hide();
-        }
-    });
-});
+   
 
 </script>
 @endsection

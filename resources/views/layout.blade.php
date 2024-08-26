@@ -62,8 +62,8 @@
 
             <!-- Sidebar - Brand -->
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{route('home')}}">
-                <div class="sidebar-brand-icon rotate-n-15">
-                   ........ 
+                <div class="sidebar-brand-icon ">
+                    <img src="{{ asset('/webcinq_logo.png') }}" height="75%"width="75%" alt="webcinq" loading="lazy" />
                 </div>
                 <div class="sidebar-brand-text mx-3"> </div>
             </a>
@@ -259,6 +259,12 @@
                                    
                                     <button class="dropdown-item" type="submit">  <i class="fa-regular  fa-note-sticky fa-fw mr-2 text-gray-400"></i>Company Info</button>
                                 </form>
+
+                                <form action="{{ route('product_form') }}" method="POST" >
+                                    @csrf
+                                   
+                                    <button class="dropdown-item" type="submit"><i class="fa-solid fa-list-ul text-gray-400 "></i> product info</button>
+                                </form>
                                 @endif
 
 
@@ -331,14 +337,14 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    <script src="{{ asset('vendor/jquery/jquery.min.js') }}"></script>
+    {{-- <script src="{{ asset('vendor/jquery/jquery.min.js') }}"></script> --}}
     <script src="{{ asset('vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ asset('vendor/jquery-easing/jquery.easing.min.js') }}"></script>
     <script src="{{ asset('js/sb-admin-2.min.js') }}"></script>
     
 <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+{{-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script> --}}
     @yield('script')
 </body>
 

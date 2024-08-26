@@ -11,15 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('devis', function (Blueprint $table) {
+        Schema::create('products', function (Blueprint $table) {
             $table->id();
-            $table->date('date');
-      
-            $table->string('is_confirmed')->default('false');
-            $table->foreignId('companyinfo_id');
-            $table->foreignId('client_id')->constrained('clients')->onDelete('cascade');
-     
             $table->timestamps();
+            $table->string('description');
+            $table->string('price');
         });
     }
 
@@ -28,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('devis');
+        Schema::dropIfExists('products');
     }
 };
