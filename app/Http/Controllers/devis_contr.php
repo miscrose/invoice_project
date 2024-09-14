@@ -213,7 +213,7 @@ function validation_quote_admin(Request $request ){
 
             $quote=devis_recu::findOrfail($quote_id);
             $invoice = new received_invoice();
-            $invoice->date =$quote->date;
+            $invoice->date =date('Y-m-d');
             $invoice->invoice_number =$quote->devis_number;
             $invoice->client_id = $quote->client_id;
             $invoice->status = 'unpaid';
@@ -262,7 +262,7 @@ else{
 
     $quote=devis::findOrfail($quote_id);
     $invoice = new invoice();
-    $invoice->date =$quote->date;
+    $invoice->date =date('Y-m-d');
 
     $invoice->client_id = $quote->client_id;
     $invoice->status = 'unpaid';
@@ -311,7 +311,7 @@ return redirect()->back();
 }
 
 
-
+/*
 function validation_quote(Request $request ){
     $quote_id=$request->quote_id;
     $user_id=Auth::user()->id;
@@ -323,7 +323,7 @@ function validation_quote(Request $request ){
     if($verif){
         $quote=devis::findOrfail($quote_id);
         $invoice = new invoice();
-        $invoice->date =$quote->date;
+        $invoice->date =date('Y-m-d');
     
         $invoice->client_id = $quote->client_id;
         $invoice->status = 'unpaid';
@@ -377,6 +377,31 @@ function validation_quote(Request $request ){
 
 
 
+
+}
+*/
+
+function refus_quote_admin(Request $request){
+    $quote_id=$request->quote_id;
+    $type=$request->type;
+
+    if( $type==='sent'){
+        
+        $quote=devis_recu::findOrfail($quote_id);
+
+        $quote->is_confirmed='refuse';
+        $quote->save();
+
+    }
+    else{
+        $quote=devis::findOrfail($quote_id);
+
+        $quote->is_confirmed='refuse';
+        $quote->save();
+
+
+    }
+    return redirect()->back();
 
 }
 

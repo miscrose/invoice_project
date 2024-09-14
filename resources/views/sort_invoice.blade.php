@@ -43,17 +43,19 @@
                                <span> {{$invoice->status}} ({{$invoice->paymentamount}}DH/{{$invoice->ttc}}DH)</span>
                                <button type="submit" class="btn btn-link p-0 m-0">
                                 <small>details</small>
-
+                  </form>                                    
                         </td>
 
 
                   
                         @endif
-                    <td class="text-end">
-                        <form action="{{ route('detail_invoice', ['type' => $invoice->type, 'id' => $invoice->id]) }}" method="POST" style="display: inline;">
-                            @csrf
-                            <button type="submit" class="btn btn-primary btn-sm">View Details</button>
-                        </form>
+                        <td class="text-end">
+                      
+    
+                            <form action="{{ route('detail_invoice', ['type' => $invoice->type, 'id' => $invoice->id]) }}" method="POST" style="display: inline;">
+                                @csrf
+                                <button type="submit" class="btn btn-primary btn-sm">View Details</button>
+                            </form>
                            </td>
                 </tr>
             @endforeach

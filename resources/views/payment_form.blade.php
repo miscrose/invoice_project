@@ -60,7 +60,7 @@
                             <thead>
                                 <tr>
                                     <th>Date</th>
-                                    <th>Amount Paid</th>
+                                    <th>Amount {{ $type === 'received' ? 'Received' : 'Paid' }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -68,8 +68,8 @@
                                     <tr>
                                         <td>{{ $payment->payment_date}}</td>
                                         <td>
-                                            <i class="fas {{ $type === 'sent' ? 'fa-arrow-up' : 'fa-arrow-down' }} 
-                                            {{ $type === 'sent' ? 'text-success' : 'text-danger' }}" 
+                                            <i class="fas {{ $type === 'received' ? 'fa-arrow-up' : 'fa-arrow-down' }} 
+                                            {{ $type === 'received' ? 'text-success' : 'text-danger' }}" 
                                             aria-hidden="true"></i>
                                             {{ number_format($payment->paye, 2) }}</td>
                                     </tr>

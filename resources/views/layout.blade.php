@@ -38,6 +38,30 @@
         .toggle-button.on .toggle-circle {
             transform: translateX(40px);
         }
+
+
+        .custom-btn {
+    padding: 10px 20px;
+    background-color: #4CAF50; /* Couleur agréable */
+    border: none;
+    color: white;
+    font-size: 16px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.custom-btn:hover {
+    background-color: #45a049; /* Couleur de survol */
+}
+
+.custom-btn .icon {
+    margin-right: 10px; /* Espace entre l'icône et le texte */
+}
+
+.custom-btn .text {
+    font-weight: bold;
+}
+
       </style>
     <!-- Custom fonts for this template-->
    <!-- <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">  -->
@@ -62,7 +86,7 @@
 
             <!-- Sidebar - Brand -->
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="{{route('home')}}">
-                <div class="sidebar-brand-icon ">
+                <div class="sidebar-brand-icon " style="padding: 15%;" >
                     <img src="{{ asset('/webcinq_logo.png') }}" height="75%"width="75%" alt="webcinq" loading="lazy" />
                 </div>
                 <div class="sidebar-brand-text mx-3"> </div>
@@ -182,38 +206,48 @@
                             </div>
                         </li>
 
-                        @if (Auth::user()->usertype=='admin')
-              
-                          <form action="{{route('invoice_form')}}" method="POST" class="mx-2 mt-3">
+                        @if (Auth::user()->usertype == 'admin')
+                        <form action="{{ route('invoice_form') }}" method="POST" class="mx-2 mt-3">
                             @csrf
-                            <button class="btn btn-info btn-icon-split " type="submit">Add Invoice</button>
+                            <button class="btn btn-info btn-icon-split custom-btn" type="submit">
+                                <span class="icon text-white-50">
+                                    <i class="fas fa-file-invoice"></i> 
+                                </span>
+                                <span class="text">Add Invoice</span>
+                            </button>
                         </form>
-                       
+                    
                         <form action="{{ route('devis_form') }}" method="POST" class="mx-2 mt-3">
                             @csrf
-                            <button class="btn btn-info btn-icon-split" type="submit">Add Quote</button>
+                            <button class="btn btn-info btn-icon-split custom-btn" type="submit">
+                                <span class="icon text-white-50">
+                                    <i class="fas fa-file-alt"></i> 
+                                </span>
+                                <span class="text">Add Quote</span>
+                            </button>
                         </form>
-                        
-                        
-                        @else
-                        
-                        
-                 
-                            <form action="{{ route('invoice_form_client') }}" method="POST" class="mx-2 mt-3">
-                                @csrf
-                                <button class="btn btn-info btn-icon-split " type="submit">Add Invoice</button>
-                            </form>
-                        
-                            <form action="{{ route('devis_form_client') }}" method="POST" class="mx-2 mt-3">
-                                @csrf
-                                <button class="btn btn-info btn-icon-split" type="submit">Add Quote</button>
-                            </form>
-                   
-
-                        
-                        @endif
-                        
-            
+                    @else
+                        <form action="{{ route('invoice_form_client') }}" method="POST" class="mx-2 mt-3">
+                            @csrf
+                            <button class="btn btn-info btn-icon-split custom-btn" type="submit">
+                                <span class="icon text-white-50">
+                                    <i class="fas fa-file-invoice"></i> 
+                                </span>
+                                <span class="text">Add Invoice</span>
+                            </button>
+                        </form>
+                    
+                        <form action="{{ route('devis_form_client') }}" method="POST" class="mx-2 mt-3">
+                            @csrf
+                            <button class="btn btn-info btn-icon-split custom-btn" type="submit">
+                                <span class="icon text-white-50">
+                                    <i class="fas fa-file-alt"></i> 
+                                </span>
+                                <span class="text">Add Quote</span>
+                            </button>
+                        </form>
+                    @endif
+                    
             
             
             

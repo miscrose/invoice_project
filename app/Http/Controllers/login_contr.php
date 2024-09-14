@@ -10,6 +10,18 @@ use Illuminate\Support\Facades\Auth;
 class login_contr extends Controller
 {
     function login(){
+        if(Auth::check()){
+            if(Auth::user()->usertype==='admin'){
+                return to_route('dashboard_admin');
+
+            }
+            else {
+                return to_route('dashboard_client');
+            }
+           
+
+        }
+
         return view('login');
     }
 
@@ -21,7 +33,15 @@ class login_contr extends Controller
             'password' => $validatedData['password']])){
 
                 $request->session()->regenerate();
-                return redirect()->intended('home');
+                
+                if(Auth::user()->usertype==='admin'){
+                    return to_route('dashboard_admin');
+
+                }
+                else {
+                    return to_route('dashboard_client');
+                }
+               
         }
         
         return back()->withErrors([

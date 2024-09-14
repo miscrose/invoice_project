@@ -101,7 +101,8 @@ Route::post('/payment_form_save', [invoice_contr::class, 'payment_form_save'])->
 
 
 Route::post('/validation_quote_admin', [devis_contr::class, 'validation_quote_admin'])->name('validation_quote_admin');
-Route::post('/validation_quote', [devis_contr::class, 'validation_quote'])->name('validation_quote');
+Route::post('/refus_quote_admin', [devis_contr::class, 'refus_quote_admin'])->name('refus_quote_admin');
+//Route::post('/validation_quote', [devis_contr::class, 'validation_quote'])->name('validation_quote');
 
 
 Route::match(['get', 'post'],'/product_form', [admin_contr::class, 'product_form'])->middleware('admin')->name('product_form');
